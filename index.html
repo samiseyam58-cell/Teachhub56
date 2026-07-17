@@ -254,20 +254,23 @@
         navigator.serviceWorker.register('sw.js');
       }
 
-      // Automatic Install Prompt (3 seconds delay)
       let deferredPrompt;
       window.addEventListener('beforeinstallprompt', (e) => {
+        // Browser ka default prompt roko
         e.preventDefault();
+        // Prompt ko save karo
         deferredPrompt = e;
-        setTimeout(() => {
-          if (confirm("Easily stay connected! Do you want to add this Support Chat to your mobile Home Screen for quick access?")) {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-              deferredPrompt = null;
-            });
-          }
-        }, 3000); 
       });
+
+      // User ko tab prompt dikhao jab wo screen par kahein bhi click kare
+      window.addEventListener('click', () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            deferredPrompt = null;
+          });
+        }
+      }, { once: true });
     </script>
 </head>
 <body>
