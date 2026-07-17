@@ -95,7 +95,6 @@
         let currentSender = "user";
         let mediaRecorder, audioChunks = [], isRecording = false;
 
-        // Unique User Identifier inside LocalStorage for individual chat sessions
         let myChatDocId = localStorage.getItem('my_chat_session_id');
         if (!myChatDocId) {
             myChatDocId = "user_" + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
@@ -187,11 +186,8 @@
 
         async function sendMessageToFirebase(type, content) {
             const timestamp = Date.now();
-            
-            // Auto initialize user root doc with metadata structure if not present
             const userRootRef = doc(db, "group_messages", myChatDocId);
             await updateDoc(userRootRef, { lastUpdated: timestamp }).catch(async () => {
-                // If doc doesn't exist yet, try creating it with fallback baseline schema
                 import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js").then(async ({ setDoc }) => {
                     await setDoc(userRootRef, { sessionCreatedAt: timestamp, statusTag: "" }, { merge: true });
                 });
@@ -246,28 +242,20 @@
     </script>
 
     <script>
-      // 1. Service Worker registration
+      // Service Worker registration
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
-          .then(() => console.log('PWA Service Worker Active'))
-          .catch(err => console.log('Service Worker Registration Error', err));
+        navigator.serviceWorker.register('sw.js');
       }
 
-      // 2. Capture beforeinstallprompt event
+      // Automatic Install Prompt (3 seconds delay)
       let deferredPrompt;
       window.addEventListener('beforeinstallprompt', (e) => {
-        // Default prompt ko stop karein
         e.preventDefault();
         deferredPrompt = e;
-        
-        // TikTok user ke aane ke 3 seconds baad automatic alert show hoga
         setTimeout(() => {
           if (confirm("Easily stay connected! Do you want to add this Support Chat to your mobile Home Screen for quick access?")) {
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then((choiceResult) => {
-              if (choiceResult.outcome === 'accepted') {
-                console.log('User installed the PWA Chat app.');
-              }
               deferredPrompt = null;
             });
           }
