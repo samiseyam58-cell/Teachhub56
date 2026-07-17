@@ -4,81 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Support</title>
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#075e54">
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg">
-    
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        body { background: #e5ddd5; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        .chat-container { width: 100%; max-width: 450px; height: 100vh; background: #f0f2f5; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.15); }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #e5ddd5; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        .chat-container { width: 100%; max-width: 450px; height: 100vh; display: flex; flex-direction: column; background: #efeae2; }
         
-        /* HEADER: Trusted WhatsApp Green */
-        .chat-header { background: #075e54; color: #ffffff; padding: 15px; display: flex; align-items: center; gap: 12px; }
-        .profile-img { width: 40px; height: 40px; border-radius: 50%; background: #ccc; object-fit: cover; }
-        .header-info .name { font-size: 17px; font-weight: 600; }
-        .header-info .status { font-size: 12px; color: #b2dfdb; }
+        .chat-header { background: #075e54; color: white; padding: 15px; display: flex; align-items: center; gap: 10px; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #e5ddd5; }
         
-        /* CHAT MESSAGES */
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #e5ddd5; }
+        /* Input Area Fix */
+        .chat-input-area { padding: 10px; background: #f0f2f5; display: flex; align-items: center; gap: 8px; position: sticky; bottom: 0; }
+        .input-container { flex: 1; background: #fff; border-radius: 25px; padding: 8px 15px; display: flex; align-items: center; }
+        .input-container input { flex: 1; border: none; outline: none; padding: 5px; }
+        .send-btn { background: #075e54; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; }
         
-        .msg { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 14.5px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 5px; }
-        .msg.sent-by-me { background: #d9fdd3; align-self: flex-end; border-top-right-radius: 0; color: #111b21; border: 1px solid #c2e5bc; }
-        .msg.received-by-me { background: #ffffff; align-self: flex-start; border-top-left-radius: 0; color: #111b21; border: 1px solid #e0e0e0; }
-        
-        /* INPUT AREA */
-        .chat-input-area { padding: 12px; background: #f0f2f5; display: flex; align-items: center; gap: 10px; }
-        .input-container { flex: 1; background: #ffffff; border-radius: 25px; padding: 5px 15px; display: flex; align-items: center; border: 1px solid #ccc; }
-        .input-container input { flex: 1; border: none; outline: none; padding: 8px; font-size: 15px; }
-        .icon-btn { border: none; background: none; font-size: 20px; cursor: pointer; color: #54656f; }
-        .send-btn { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-        .recording { color: #ea0038; animation: blink 1s infinite; }
+        .msg { padding: 8px 12px; border-radius: 10px; max-width: 80%; }
+        .sent-by-me { background: #d9fdd3; align-self: flex-end; }
+        .received-by-me { background: #fff; align-self: flex-start; }
     </style>
-
-    <script type="module">
-        // [Aapka wahi Firebase logic yahan rahega - maine space bachane ke liye hide kiya hai]
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        // ... (Baaki firebase logic waisa hi hai) ...
-        // [Aapne iske neeche jo loadChatSession aur sendMessage wali logic likhi thi, wo yahan paste karni hai]
-    </script>
-
-    <script>
-        // PWA Installation Prompt Logic
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            setTimeout(() => {
-                if (confirm("Install Support Chat App for faster access?")) {
-                    deferredPrompt.prompt();
-                }
-            }, 3000);
-        });
-    </script>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <img class="profile-img" src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="Support">
-            <div class="header-info"><div class="name">Customer Support</div><div class="status">Online</div></div>
-        </div>
-        <div class="chat-messages" id="chatBox"></div>
-        <div class="chat-input-area">
-            <div class="input-container">
-                <input type="file" id="mediaInput" accept="image/*,video/*,audio/*" style="display: none;">
-                <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">📎</button>
-                <input type="text" id="msgInput" placeholder="Type a message...">
-                <button class="icon-btn" id="voiceBtn">🎙️</button>
-            </div>
-            <button class="send-btn" id="sendBtn">➤</button>
-        </div>
+<div class="chat-container">
+    <div class="chat-header">
+        <div><b>Customer Support</b><br><small>Online</small></div>
     </div>
+    <div class="chat-messages" id="chatBox"></div>
+    <div class="chat-input-area">
+        <div class="input-container">
+            <input type="text" id="msgInput" placeholder="Type a message...">
+        </div>
+        <button class="send-btn" id="sendBtn">➤</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDe8rFsoeI7QnlPfuJb_FyWOLe1SdqEZHM",
+        authDomain: "wattsapp-27aa4.firebaseapp.com",
+        projectId: "wattsapp-27aa4",
+        storageBucket: "wattsapp-27aa4.firebasestorage.app",
+        messagingSenderId: "826330591993",
+        appId: "1:826330591993:web:51865cddf32ba8b5312828"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let myChatDocId = localStorage.getItem('my_chat_session_id') || "user_" + Date.now();
+    localStorage.setItem('my_chat_session_id', myChatDocId);
+
+    const chatBox = document.getElementById('chatBox');
+    const msgInput = document.getElementById('msgInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Load Messages
+    onSnapshot(query(collection(db, "group_messages", myChatDocId, "messages"), orderBy("time_now", "asc")), (snapshot) => {
+        chatBox.innerHTML = "";
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const msg = document.createElement('div');
+            msg.className = 'msg ' + (data.sender === 'user' ? 'sent-by-me' : 'received-by-me');
+            msg.innerText = data.message_text || data.content;
+            chatBox.appendChild(msg);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // Send Message
+    sendBtn.addEventListener('click', async () => {
+        const text = msgInput.value.trim();
+        if(text) {
+            await addDoc(collection(db, "group_messages", myChatDocId, "messages"), {
+                sender: 'user', message_text: text, time_now: Date.now()
+            });
+            msgInput.value = "";
+        }
+    });
+</script>
 </body>
 </html>
