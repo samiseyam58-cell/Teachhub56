@@ -7,22 +7,17 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #e5ddd5; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* Header */
         .chat-header { background: #075e54; color: white; padding: 12px; display: flex; align-items: center; gap: 12px; }
-        .dp { width: 45px; height: 45px; border-radius: 50%; background: white; object-fit: cover; }
-        
-        /* Messages */
+        .dp { width: 45px; height: 45px; border-radius: 50%; background: white; }
         .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; font-size: 14px; background: white; }
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; background: white; font-size: 14px; position: relative; }
         .sent { background: #d9fdd3; align-self: flex-end; }
-        .tick { font-size: 10px; color: #53bdeb; float: right; margin-left: 5px; }
-
-        /* Input Area (Fixed) */
-        .chat-input { background: #f0f2f5; padding: 10px; display: flex; align-items: center; gap: 8px; z-index: 1000; }
-        .input-box { flex: 1; background: white; border-radius: 24px; padding: 10px 15px; border: 1px solid #ccc; outline: none; }
-        .icon { font-size: 22px; cursor: pointer; }
-        .send-btn { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; }
+        .meta { font-size: 10px; color: #666; margin-top: 4px; text-align: right; }
+        .tick { margin-left: 5px; font-weight: bold; }
+        .blue { color: #34b7f1; }
+        .chat-input { background: #f0f2f5; padding: 10px; display: flex; align-items: center; gap: 8px; }
+        .input-box { flex: 1; background: white; border-radius: 24px; padding: 10px 15px; border: 1px solid #ccc; }
+        .send-btn { background: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 20px; }
     </style>
 </head>
 <body>
@@ -36,9 +31,8 @@
 
 <div class="chat-input">
     <input type="file" id="fileInput" hidden>
-    <span class="icon" onclick="document.getElementById('fileInput').click()">📎</span>
+    <span onclick="document.getElementById('fileInput').click()">📎</span>
     <input type="text" id="msgInput" class="input-box" placeholder="Type a message...">
-    <span class="icon" id="voiceBtn">🎙️</span>
     <button class="send-btn" id="sendBtn">➤</button>
 </div>
 
@@ -57,42 +51,51 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    let myChatDocId = localStorage.getItem('my_chat_session_id') || "user_" + Date.now();
-    localStorage.setItem('my_chat_session_id', myChatDocId);
+    let userId = localStorage.getItem('my_chat_session_id') || "user_" + Date.now();
+    localStorage.setItem('my_chat_session_id', userId);
 
-    // Render Messages
-    onSnapshot(query(collection(db, "group_messages", myChatDocId, "messages"), orderBy("time_now", "asc")), (snapshot) => {
+    // Message Rendering with Ticks & Time
+    onSnapshot(query(collection(db, "group_messages", userId, "messages"), orderBy("time_now", "asc")), (snapshot) => {
         const chatBox = document.getElementById('chatBox');
         chatBox.innerHTML = "";
         snapshot.forEach((doc) => {
             const d = doc.data();
+            const time = new Date(d.time_now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // Tick Logic
+            let tick = '✓'; 
+            if(d.status === 'delivered') tick = '✓✓';
+            if(d.status === 'read') tick = '<span class="blue">✓✓</span>';
+
             const div = document.createElement('div');
             div.className = 'msg ' + (d.sender === 'user' ? 'sent' : '');
-            div.innerHTML = (d.type === 'image' ? `<img src="${d.file_url}" width="100%">` : 
-                             d.type === 'audio' ? `<audio controls src="${d.file_url}"></audio>` : d.message_text) + 
-                             `<span class="tick">✓✓</span>`;
+            div.innerHTML = `
+                ${d.type === 'image' ? `<img src="${d.file_url}" width="100%">` : 
+                  d.type === 'audio' ? `<audio controls src="${d.file_url}"></audio>` : d.message_text}
+                <div class="meta">${time} <span class="tick">${tick}</span></div>
+            `;
             chatBox.appendChild(div);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
     });
 
-    // Send Text
+    // Send Button Logic
     document.getElementById('sendBtn').onclick = async () => {
         const input = document.getElementById('msgInput');
         if(!input.value) return;
-        await addDoc(collection(db, "group_messages", myChatDocId, "messages"), { 
-            sender: 'user', message_text: input.value, time_now: Date.now(), type: 'text' 
+        await addDoc(collection(db, "group_messages", userId, "messages"), { 
+            sender: 'user', message_text: input.value, time_now: Date.now(), type: 'text', status: 'sent' 
         });
         input.value = "";
     };
 
-    // Send Media
+    // File Upload Logic
     document.getElementById('fileInput').onchange = async (e) => {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = async (r) => {
-            await addDoc(collection(db, "group_messages", myChatDocId, "messages"), { 
-                sender: 'user', file_url: r.target.result, time_now: Date.now(), type: file.type.startsWith('image') ? 'image' : 'audio' 
+            await addDoc(collection(db, "group_messages", userId, "messages"), { 
+                sender: 'user', file_url: r.target.result, time_now: Date.now(), type: file.type.split('/')[0], status: 'sent' 
             });
         };
         reader.readAsDataURL(file);
